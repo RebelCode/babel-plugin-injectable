@@ -1,6 +1,15 @@
+# Babel Plugin Injectable
 Adds ability to mark objects as `injectable` so the DI container can automatically create instances and resolve dependencies. This plugin also adds the list of function (or constructor params) to the marked object. So the DI container shouldn't do in runtime.
+## Install
+Run:
+```
+$ npm install --save-dev @rebelcode/plugin-injectable
+```
 
-So this code:
+And add `@rebelcode/plugin-injectable` plugin to your `.babelrc`
+## Details
+
+After applying the plugin this code:
 ```js
 /**
  * @injectable
