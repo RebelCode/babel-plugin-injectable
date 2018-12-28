@@ -23,11 +23,14 @@ function getInjectable (string) {
  * @param {boolean|string} injectable Whether instance should be injectable.
  */
 function appendInjectionExpressions (t, path, fnNode, id, injectable) {
+  let isClass = false
+
   if (fnNode.body && fnNode.body.type === 'ClassBody') {
     fnNode = fnNode.body.body.find(node => node.kind === 'constructor')
     if (!fnNode) {
       fnNode = {params: []}
     }
+    isClass = true
   }
 
   if (!fnNode || !Array.isArray(fnNode.params)) {
@@ -54,6 +57,18 @@ function appendInjectionExpressions (t, path, fnNode, id, injectable) {
           t.identifier('$injectAs')
         ),
         t.stringLiteral(injectable))
+    ))
+  }
+
+  if (isClass) {
+    path.insertAfter(t.expressionStatement(
+      t.assignmentExpression(
+        '=',
+        t.memberExpression(
+          id,
+          t.identifier('$injectNewInstance')
+        ),
+        t.identifier(true))
     ))
   }
 
