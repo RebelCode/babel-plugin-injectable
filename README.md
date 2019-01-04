@@ -58,3 +58,11 @@ FooCoolService.$injectNewInstance = true;
  So the DI container can:
  1. Use that name `fooService` to create new instance of the service.
  2. Create new instance of `FooCoolService` in container with automaticaly resolved dependencies.
+ 
+ ### Development
+ To run babel transformation:
+ ```sh
+$ cd ./src
+$ ./node_modules/.bin/babel ./tests/fnDefaultClassExport.js --plugins ./../src
+ ```
+ 

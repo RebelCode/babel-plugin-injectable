@@ -1,5 +1,5 @@
 {
-  "name": "@rebelcode/plugin-injectable",
+  "name": "@rebelcode/babel-plugin-injectable",
   "version": "0.0.1",
   "description": "Adds injection markers and parameters list to instances marked as injectable",
   "main": "src/index.js",

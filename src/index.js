@@ -25,10 +25,14 @@ function getInjectable (string) {
 function appendInjectionExpressions (t, path, fnNode, id, injectable) {
   let isClass = false
 
+  let commentsHolder = path.node
   if (fnNode.body && fnNode.body.type === 'ClassBody') {
     fnNode = fnNode.body.body.find(node => node.kind === 'constructor')
     if (!fnNode) {
       fnNode = {params: []}
+    }
+    else {
+      commentsHolder = fnNode
     }
     isClass = true
   }
@@ -77,17 +81,85 @@ function appendInjectionExpressions (t, path, fnNode, id, injectable) {
   if (!params.length) {
     return
   }
-  path.insertAfter(t.expressionStatement(
+  const aliases = getParamsAliases(commentsHolder, params)
+  const a = path.insertAfter(t.expressionStatement(
     t.assignmentExpression(
       '=',
       t.memberExpression(
         id,
         t.identifier('$injectParams')
       ),
-      t.arrayExpression(
-        params
-      ))
+      t.stringLiteral('a'))
   ))
+  a[0].replaceWithSourceString(`${id.name}.$injectParams = ` + JSON.stringify(aliases))
+}
+
+/**
+ * Get leading comments from the given path.
+ *
+ * @param path
+ *
+ * @return {string|boolean}
+ */
+function getLeadingComments (path) {
+  const lookup = path.node || path
+  if (!lookup.leadingComments || !lookup.leadingComments[0]) {
+    return false
+  }
+  return lookup.leadingComments[0].value
+}
+
+/**
+ * Look for dependencies aliases.
+ *
+ * @param node
+ * @param params
+ *
+ * @return {object|boolean}
+ */
+function getParamsAliases (node, params) {
+  const comments = getLeadingComments(node)
+  let aliases = makeDependenciesAliases(comments)
+  for (let param of params) {
+    if (!aliases[param.value]) {
+      aliases[param.value] = {
+        from: param.value
+      }
+    }
+  }
+  return aliases
+}
+
+/**
+ * Make aliases from comments string.
+ *
+ * @param comments
+ *
+ * @return {object}
+ */
+function makeDependenciesAliases (comments) {
+  const regex = /@dependency {(.*)?} (.*)/gm
+  let m
+  let matches = {}
+
+  while ((m = regex.exec(comments)) !== null) {
+    if (m.index === regex.lastIndex) {
+      regex.lastIndex++
+    }
+    let dep = []
+    m.forEach((match, groupIndex) => {
+      dep.push(match)
+    })
+    let [path, defaultString] = dep[1].split(' = ')
+    matches[dep[2]] = {
+      from: path
+    }
+    if (defaultString) {
+      matches[dep[2]]['default'] = JSON.parse(defaultString)
+    }
+  }
+
+  return matches
 }
 
 /**
@@ -98,10 +170,10 @@ function appendInjectionExpressions (t, path, fnNode, id, injectable) {
  * @return {*}
  */
 function injectionCommentBlock (path) {
-  if (!path.node.leadingComments || !path.node.leadingComments[0]) {
+  const commentBlock = getLeadingComments(path)
+  if (!commentBlock) {
     return false
   }
-  const commentBlock = path.node.leadingComments[0].value
   return getInjectable(commentBlock)
 }
 
